@@ -391,6 +391,16 @@ def _build_field_metadata() -> List[FieldMeta]:
     f("teraprint_api_key", "TeraPrintPortal API Key",
       "Must match the JARVIS_API_KEY environment variable set on the portal deployment",
       "integrations", "password", nullable=True)
+    f("kuma_base_url", "Uptime Kuma URL",
+      "Base URL of your self-hosted Uptime Kuma instance (e.g. http://192.168.1.10:3001). "
+      "Leave empty to disable the uptimeKuma tool.",
+      "integrations", "str", nullable=True)
+    f("kuma_username", "Uptime Kuma Username",
+      "Username of an Uptime Kuma account on your instance",
+      "integrations", "str", nullable=True)
+    f("kuma_password", "Uptime Kuma Password",
+      "Password of the Uptime Kuma account",
+      "integrations", "password", nullable=True)
 
     # --- Advanced ---
     f("echo_energy_threshold", "Echo Energy Threshold",

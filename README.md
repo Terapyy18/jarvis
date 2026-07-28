@@ -165,7 +165,7 @@ Jarvis starts listening automatically — just say "Jarvis" and talk!
 - **Unlimited Memory** - Never forgets. Searches across all your conversation history. Memory Viewer GUI included.
 - **Adaptive Tone** - Automatically surgical for code, pragmatic for business, encouraging for wellbeing — no manual mode switching
 - **Smart Tool Selection** - Embedding-based relevance filtering picks only the tools needed per query — add unlimited MCP tools without performance degradation
-- **Built-in Tools** - Screenshot OCR, web search (DuckDuckGo → Brave → Wikipedia fallback chain with auto-fetch), weather, file access, nutrition tracking, location awareness, self-hosted app bridges (Coolify server control, TeraPrintPortal business data), plus a tool-discovery escape hatch the agent uses to widen its own toolset mid-reply
+- **Built-in Tools** - Screenshot OCR, web search (DuckDuckGo → Brave → Wikipedia fallback chain with auto-fetch), weather, file access, nutrition tracking, location awareness, self-hosted app bridges (Coolify server control, Uptime Kuma monitoring, TeraPrintPortal business data), plus a tool-discovery escape hatch the agent uses to widen its own toolset mid-reply
 - **Knowledge Graph Memory** - Self-organising memory that learns from conversations, auto-splits by topic, and surfaces relevant knowledge automatically
 - **Natural Voice** - Say "Jarvis" anywhere in your sentence, interrupt with "stop", follow up without repeating the wake word
 - **Dictation Mode** - Free, offline alternative to WisprFlow — hold a hotkey, speak, release to paste text into any app
@@ -410,9 +410,9 @@ If your ISP uses carrier-grade NAT (CGNAT), Jarvis automatically resolves your t
 </details>
 
 <details>
-<summary><strong>Self-Hosted App Bridges (Coolify, TeraPrintPortal)</strong></summary>
+<summary><strong>Self-Hosted App Bridges (Coolify, Uptime Kuma, TeraPrintPortal)</strong></summary>
 
-Jarvis can talk to apps you host on your own infrastructure. Both bridges point at servers you control — nothing goes to a third-party cloud.
+Jarvis can talk to apps you host on your own infrastructure. All bridges point at servers you control — nothing goes to a third-party cloud.
 
 **Coolify** — voice control for your self-hosted [Coolify](https://coolify.io) deployment platform: "is my server ok?", "restart the blog", "deploy the portal". Configure under **⚙️ Settings → 🔗 App Integrations**:
 
@@ -424,6 +424,16 @@ Jarvis can talk to apps you host on your own infrastructure. Both bridges point 
 ```
 
 Create the token in Coolify under **Keys & Tokens → API tokens**.
+
+**Uptime Kuma** — monitoring status and control for your self-hosted [Uptime Kuma](https://github.com/louislam/uptime-kuma) instance: "is everything green?", "is the blog down?", "pause monitoring for the portfolio". Uses an Uptime Kuma account (Kuma v1 has no API tokens for its control surface):
+
+```json
+{
+  "kuma_base_url": "http://192.168.1.10:3001",
+  "kuma_username": "your-username",
+  "kuma_password": "your-password"
+}
+```
 
 **TeraPrintPortal** — read-only business data from your self-hosted client portal (clients, projects, quotes, invoices, payments, appointments, sales, subscriptions): "any unpaid invoices?", "what appointments do I have this week?". The portal needs a one-file bridge route installed — see [`examples/teraprintportal/`](examples/teraprintportal/) — then:
 

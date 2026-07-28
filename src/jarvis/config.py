@@ -275,6 +275,12 @@ class Settings:
     # JARVIS_API_KEY environment variable. Empty string means "not configured".
     teraprint_base_url: str
     teraprint_api_key: str
+    # Uptime Kuma monitoring — Kuma v1 authenticates with an account rather
+    # than an API token. Empty base URL means "not configured"; the
+    # uptimeKuma tool then replies with setup guidance instead of calling out.
+    kuma_base_url: str
+    kuma_username: str
+    kuma_password: str
 
     # Dictation (hold-to-dictate)
     dictation_enabled: bool
@@ -315,7 +321,7 @@ def _save_json(path: Path, data: Dict[str, Any]) -> bool:
 
     Restricts the saved file to ``0o600`` on POSIX so credentials in
     config (``llm_api_key``, ``embedding_api_key``, ``brave_search_api_key``,
-    ``coolify_api_token``, ``teraprint_api_key``)
+    ``coolify_api_token``, ``teraprint_api_key``, ``kuma_password``)
     are not readable by other users on multi-user systems. ``chmod`` is a
     no-op on Windows but is wrapped in a try so platform quirks never
     fail the save.
@@ -655,6 +661,9 @@ def get_default_config() -> Dict[str, Any]:
         "coolify_api_token": "",
         "teraprint_base_url": "",
         "teraprint_api_key": "",
+        "kuma_base_url": "",
+        "kuma_username": "",
+        "kuma_password": "",
 
         # Dictation (hold-to-dictate, WisprFlow-like)
         "dictation_enabled": True,
@@ -886,6 +895,9 @@ def load_settings() -> Settings:
     coolify_api_token = str(merged.get("coolify_api_token", "") or "").strip()
     teraprint_base_url = str(merged.get("teraprint_base_url", "") or "").strip()
     teraprint_api_key = str(merged.get("teraprint_api_key", "") or "").strip()
+    kuma_base_url = str(merged.get("kuma_base_url", "") or "").strip()
+    kuma_username = str(merged.get("kuma_username", "") or "").strip()
+    kuma_password = str(merged.get("kuma_password", "") or "").strip()
     dictation_enabled = bool(merged.get("dictation_enabled", True))
     dictation_hotkey = str(merged.get("dictation_hotkey", _default_dictation_hotkey())).strip()
     dictation_filler_removal = bool(merged.get("dictation_filler_removal", False))
@@ -1032,6 +1044,9 @@ def load_settings() -> Settings:
         coolify_api_token=coolify_api_token,
         teraprint_base_url=teraprint_base_url,
         teraprint_api_key=teraprint_api_key,
+        kuma_base_url=kuma_base_url,
+        kuma_username=kuma_username,
+        kuma_password=kuma_password,
 
         # Dictation
         dictation_enabled=dictation_enabled,

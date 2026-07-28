@@ -22,6 +22,7 @@ from .builtin.stop import StopTool
 from .builtin.tool_search import ToolSearchTool
 from .builtin.coolify import CoolifyTool
 from .builtin.teraprint_portal import TeraPrintPortalTool
+from .builtin.uptime_kuma import UptimeKumaTool
 from .types import ToolExecutionResult
 from ..config import Settings
 from .external.mcp_client import MCPClient
@@ -43,6 +44,7 @@ BUILTIN_TOOLS = {
     "toolSearchTool": ToolSearchTool(),
     "coolify": CoolifyTool(),
     "teraPrintPortal": TeraPrintPortalTool(),
+    "uptimeKuma": UptimeKumaTool(),
 }
 
 # Global MCP tools cache
