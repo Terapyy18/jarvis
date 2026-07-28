@@ -20,6 +20,8 @@ from .builtin.refresh_mcp_tools import RefreshMCPToolsTool
 from .builtin.weather import WeatherTool
 from .builtin.stop import StopTool
 from .builtin.tool_search import ToolSearchTool
+from .builtin.coolify import CoolifyTool
+from .builtin.teraprint_portal import TeraPrintPortalTool
 from .types import ToolExecutionResult
 from ..config import Settings
 from .external.mcp_client import MCPClient
@@ -39,6 +41,8 @@ BUILTIN_TOOLS = {
     "getWeather": WeatherTool(),
     "stop": StopTool(),
     "toolSearchTool": ToolSearchTool(),
+    "coolify": CoolifyTool(),
+    "teraPrintPortal": TeraPrintPortalTool(),
 }
 
 # Global MCP tools cache

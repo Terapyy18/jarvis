@@ -266,6 +266,16 @@ class Settings:
     # language.
     wikipedia_fallback_enabled: bool
 
+    # App Integrations (self-hosted instances the user owns)
+    # Coolify deployment platform — empty string means "not configured";
+    # the coolify tool then replies with setup guidance instead of calling out.
+    coolify_base_url: str
+    coolify_api_token: str
+    # TeraPrintPortal client portal — key must match the portal's
+    # JARVIS_API_KEY environment variable. Empty string means "not configured".
+    teraprint_base_url: str
+    teraprint_api_key: str
+
     # Dictation (hold-to-dictate)
     dictation_enabled: bool
     dictation_hotkey: str
@@ -304,7 +314,8 @@ def _save_json(path: Path, data: Dict[str, Any]) -> bool:
     untouched instead of truncated.
 
     Restricts the saved file to ``0o600`` on POSIX so credentials in
-    config (``llm_api_key``, ``embedding_api_key``, ``brave_search_api_key``)
+    config (``llm_api_key``, ``embedding_api_key``, ``brave_search_api_key``,
+    ``coolify_api_token``, ``teraprint_api_key``)
     are not readable by other users on multi-user systems. ``chmod`` is a
     no-op on Windows but is wrapped in a try so platform quirks never
     fail the save.
@@ -639,6 +650,12 @@ def get_default_config() -> Dict[str, Any]:
         "brave_search_api_key": "",
         "wikipedia_fallback_enabled": True,
 
+        # App Integrations (self-hosted instances the user owns)
+        "coolify_base_url": "",
+        "coolify_api_token": "",
+        "teraprint_base_url": "",
+        "teraprint_api_key": "",
+
         # Dictation (hold-to-dictate, WisprFlow-like)
         "dictation_enabled": True,
         "dictation_hotkey": _default_dictation_hotkey(),
@@ -865,6 +882,10 @@ def load_settings() -> Settings:
     web_search_enabled = bool(merged.get("web_search_enabled", True))
     brave_search_api_key = str(merged.get("brave_search_api_key", "") or "").strip()
     wikipedia_fallback_enabled = bool(merged.get("wikipedia_fallback_enabled", True))
+    coolify_base_url = str(merged.get("coolify_base_url", "") or "").strip()
+    coolify_api_token = str(merged.get("coolify_api_token", "") or "").strip()
+    teraprint_base_url = str(merged.get("teraprint_base_url", "") or "").strip()
+    teraprint_api_key = str(merged.get("teraprint_api_key", "") or "").strip()
     dictation_enabled = bool(merged.get("dictation_enabled", True))
     dictation_hotkey = str(merged.get("dictation_hotkey", _default_dictation_hotkey())).strip()
     dictation_filler_removal = bool(merged.get("dictation_filler_removal", False))
@@ -1005,6 +1026,12 @@ def load_settings() -> Settings:
         web_search_enabled=web_search_enabled,
         brave_search_api_key=brave_search_api_key,
         wikipedia_fallback_enabled=wikipedia_fallback_enabled,
+
+        # App Integrations
+        coolify_base_url=coolify_base_url,
+        coolify_api_token=coolify_api_token,
+        teraprint_base_url=teraprint_base_url,
+        teraprint_api_key=teraprint_api_key,
 
         # Dictation
         dictation_enabled=dictation_enabled,

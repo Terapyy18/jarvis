@@ -165,7 +165,7 @@ Jarvis starts listening automatically — just say "Jarvis" and talk!
 - **Unlimited Memory** - Never forgets. Searches across all your conversation history. Memory Viewer GUI included.
 - **Adaptive Tone** - Automatically surgical for code, pragmatic for business, encouraging for wellbeing — no manual mode switching
 - **Smart Tool Selection** - Embedding-based relevance filtering picks only the tools needed per query — add unlimited MCP tools without performance degradation
-- **Built-in Tools** - Screenshot OCR, web search (DuckDuckGo → Brave → Wikipedia fallback chain with auto-fetch), weather, file access, nutrition tracking, location awareness, plus a tool-discovery escape hatch the agent uses to widen its own toolset mid-reply
+- **Built-in Tools** - Screenshot OCR, web search (DuckDuckGo → Brave → Wikipedia fallback chain with auto-fetch), weather, file access, nutrition tracking, location awareness, self-hosted app bridges (Coolify server control, TeraPrintPortal business data), plus a tool-discovery escape hatch the agent uses to widen its own toolset mid-reply
 - **Knowledge Graph Memory** - Self-organising memory that learns from conversations, auto-splits by topic, and surfaces relevant knowledge automatically
 - **Natural Voice** - Say "Jarvis" anywhere in your sentence, interrupt with "stop", follow up without repeating the wake word
 - **Dictation Mode** - Free, offline alternative to WisprFlow — hold a hotkey, speak, release to paste text into any app
@@ -406,6 +406,33 @@ If your ISP uses carrier-grade NAT (CGNAT), Jarvis automatically resolves your t
 ```
 
 **Setup:** Register for a free [MaxMind GeoLite2](https://www.maxmind.com/en/geolite2/signup) account, download the City database (MMDB format), and save it to `~/.local/share/jarvis/geoip/GeoLite2-City.mmdb`. The setup wizard will guide you through this.
+
+</details>
+
+<details>
+<summary><strong>Self-Hosted App Bridges (Coolify, TeraPrintPortal)</strong></summary>
+
+Jarvis can talk to apps you host on your own infrastructure. Both bridges point at servers you control — nothing goes to a third-party cloud.
+
+**Coolify** — voice control for your self-hosted [Coolify](https://coolify.io) deployment platform: "is my server ok?", "restart the blog", "deploy the portal". Configure under **⚙️ Settings → 🔗 App Integrations**:
+
+```json
+{
+  "coolify_base_url": "https://coolify.example.com",
+  "coolify_api_token": "your-token"
+}
+```
+
+Create the token in Coolify under **Keys & Tokens → API tokens**.
+
+**TeraPrintPortal** — read-only business data from your self-hosted client portal (clients, projects, quotes, invoices, payments, appointments, sales, subscriptions): "any unpaid invoices?", "what appointments do I have this week?". The portal needs a one-file bridge route installed — see [`examples/teraprintportal/`](examples/teraprintportal/) — then:
+
+```json
+{
+  "teraprint_base_url": "https://app.example.com",
+  "teraprint_api_key": "same-value-as-the-portal's-JARVIS_API_KEY"
+}
+```
 
 </details>
 

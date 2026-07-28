@@ -67,6 +67,7 @@ CATEGORIES = [
     ("memory", "🧠 Memory & Dialogue"),
     ("location", "📍 Location"),
     ("features", "✨ Features"),
+    ("integrations", "🔗 App Integrations"),
     ("mcps", "🔌 MCP Servers"),
     ("advanced", "🔧 Advanced"),
 ]
@@ -374,6 +375,22 @@ def _build_field_metadata() -> List[FieldMeta]:
     f("dictation_custom_dictionary", "Custom Dictionary",
       "Correction rules for dictation. Use 'wrong -> right' format (e.g. 'Jarvice -> Jarvis')",
       "features", "list")
+
+    # --- App Integrations (self-hosted instances the user owns) ---
+    f("coolify_base_url", "Coolify URL",
+      "Base URL of your self-hosted Coolify instance (e.g. https://coolify.example.com). "
+      "Leave empty to disable the coolify tool.",
+      "integrations", "str", nullable=True)
+    f("coolify_api_token", "Coolify API Token",
+      "API token from Coolify → Keys & Tokens → API tokens",
+      "integrations", "password", nullable=True)
+    f("teraprint_base_url", "TeraPrintPortal URL",
+      "Base URL of your self-hosted TeraPrintPortal (e.g. https://app.example.com). "
+      "Leave empty to disable the portal tool.",
+      "integrations", "str", nullable=True)
+    f("teraprint_api_key", "TeraPrintPortal API Key",
+      "Must match the JARVIS_API_KEY environment variable set on the portal deployment",
+      "integrations", "password", nullable=True)
 
     # --- Advanced ---
     f("echo_energy_threshold", "Echo Energy Threshold",
