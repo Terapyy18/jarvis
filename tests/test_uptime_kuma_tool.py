@@ -49,7 +49,8 @@ HEARTBEATS = {
     2: [{"status": 0, "ping": None, "msg": "timeout of 48000ms exceeded"}],
 }
 
-UPTIME = {1: {24: 100, 720: 99.9}, 2: {24: 0, 720: 87.5}}
+# Kuma's uptimeList sends fractions of 1 (1 = 100% up), not percentages.
+UPTIME = {1: {24: 1, 720: 0.999}, 2: {24: 0, 720: 0.875}}
 
 
 class FakeKumaApi:
@@ -126,8 +127,10 @@ def test_status_reports_up_down_and_paused_states():
     assert "VoltPack" in text and "UP" in text
     assert "Portfolio" in text and "DOWN" in text
     assert "Navidrome" in text and "PAUSED" in text
-    # Uptime percentages surface so the model can answer "how stable is X?"
-    assert "99.9" in text
+    # Uptime fractions surface as human percentages so the model can
+    # answer "how stable is X?" (0.999 → 99.9%, 1 → 100%)
+    assert "99.9%" in text
+    assert "100" in text and "1.0%" not in text
     # The session logged in with the configured credentials and closed cleanly
     api = FakeKumaApi.instances[0]
     assert api.login_args == ("admin", "s3cret!")

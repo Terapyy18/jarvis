@@ -116,15 +116,16 @@ class UptimeKumaTool(Tool):
 
     @staticmethod
     def _uptime_bits(monitor: Dict[str, Any], uptimes: Dict[Any, Any]) -> str:
+        # Kuma's uptimeList sends fractions of 1 (1 = 100% up).
         mid = monitor.get("id")
         entry = uptimes.get(mid) or uptimes.get(str(mid)) or {}
         bits = []
-        day = entry.get(24) or entry.get("24")
-        month = entry.get(720) or entry.get("720")
-        if day is not None:
-            bits.append(f"24h={round(float(day), 2)}%")
-        if month is not None:
-            bits.append(f"30d={round(float(month), 2)}%")
+        for hours, label in ((24, "24h"), (720, "30d")):
+            value = entry.get(hours)
+            if value is None:
+                value = entry.get(str(hours))
+            if value is not None:
+                bits.append(f"{label}={round(float(value) * 100, 2)}%")
         return " ".join(bits)
 
     def _summarise(self, monitors: List[Dict[str, Any]],
