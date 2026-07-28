@@ -237,6 +237,16 @@ The graph toolbar includes an "Import from Diary" button (📥) that bootstraps 
 
 The endpoint streams NDJSON progress events (`start`, `progress`, `complete`, `error`) so the UI shows real-time feedback. Each diary summary is processed through the standard `update_graph_from_dialogue()` pipeline (extract → traverse → append → split). Failures on individual summaries are non-fatal — the import continues with the remaining entries.
 
+### Import from Folder (CLI)
+
+`python -m jarvis.memory.import_folder <folder> [--exclude NAME ...]` (in `memory/import_folder.py`) bootstraps the graph from a folder of markdown notes the user maintains (infrastructure docs, project notes, profiles):
+
+- **Top-level `*.md` only, non-recursive.** Subfolders of a notes directory typically hold attachments or tooling state, not knowledge notes. `--exclude` skips exact file names (case-insensitive).
+- **Heading-aware chunking.** Files are split on markdown headings and packed into chunks of at most 3,000 characters; an oversized section falls back to paragraph splits, then hard splits. No content is dropped.
+- **Provenance framing.** Each chunk is submitted as "Notes the user keeps in their personal knowledge folder, file '<name>' (part i/n):" so the extractor knows the text is the user's own notes and the source file survives into extraction context.
+- **Standard pipeline.** Every chunk goes through `update_graph_from_dialogue()` (extract → classify → place → merge → split) with the chat model for extraction and the fast model as picker, so imported knowledge gets the same branch routing, dedupe, and consolidation as conversational learning. Re-running the import is safe: unchanged facts dedupe as duplicates.
+- **Fail-soft.** A chunk whose extraction raises is counted as a failure and reported; the import continues with the rest. Exit code 0 on a clean run, 2 if any chunk failed.
+
 ### Consolidate All (🧹)
 
 The toolbar's 🧹 button walks every populated node and calls `merge_node_data` with an empty `new_facts` list, prompting the picker model to re-apply the latest supersession/dedupe/consolidation rules to data that landed before those rules existed (or before the prompt was tightened). Like Import from Diary, it streams NDJSON progress events. Per-node failures are non-fatal so a single bad node can't abort the sweep. The UI confirms before starting and reports the total line-count delta on completion.
