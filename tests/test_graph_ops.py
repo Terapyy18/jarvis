@@ -980,6 +980,130 @@ class TestMergeNodeData:
         assert result.success is False
 
     @patch("src.jarvis.memory.graph_ops.call_llm_direct")
+    def test_loss_guard_rejects_collapsing_rewrite(self, mock_llm, store):
+        """Consolidation tidies a node; it does not gut it. A rewrite
+        that drops most of the existing lines is loss, not
+        consolidation — reject it so the caller's append path keeps the
+        data. Small picker models do exactly this when handed a large
+        node, and an accepted collapse is unrecoverable."""
+        existing = "\n".join(f"Existing fact {i}." for i in range(20))
+        node = store.create_node(
+            name="T", description="d", data=existing, parent_id="user",
+        )
+        mock_llm.return_value = '{"facts": ["Everything, summarised."]}'
+
+        result = merge_node_data(
+            store=store,
+            node_id=node.id,
+            new_facts=["A new fact."],
+            cfg=None,
+            chat_model="model",
+        )
+
+        assert result.success is False
+        assert store.get_node(node.id).data == existing
+
+    @patch("src.jarvis.memory.graph_ops.call_llm_direct")
+    def test_loss_guard_allows_genuine_consolidation(self, mock_llm, store):
+        """Folding repeated activities into a pattern legitimately
+        shrinks a node. The guard must not fire on that."""
+        existing = "\n".join(f"User ate sushi on day {i}." for i in range(10))
+        node = store.create_node(
+            name="T", description="d", data=existing, parent_id="user",
+        )
+        kept = [f"Consolidated {i}." for i in range(6)]
+        mock_llm.return_value = '{"facts": [' + ", ".join(
+            f'"{k}"' for k in kept) + "]}"
+
+        result = merge_node_data(
+            store=store,
+            node_id=node.id,
+            new_facts=[],
+            cfg=None,
+            chat_model="model",
+        )
+
+        assert result.success is True
+        assert store.get_node(node.id).data == "\n".join(kept)
+
+    @patch("src.jarvis.memory.graph_ops.call_llm_direct")
+    def test_loss_guard_boundary_pins_to_retention_constant(self, mock_llm, store):
+        """The floor is `ceil((existing + new) * _MERGE_RETENTION_FLOOR)`
+        — measured against every line the rewrite was handed, not just
+        the ones already on the node. Pin both sides against the named
+        constant so a future tweak can't silently drift the guard."""
+        import math
+
+        from src.jarvis.memory.graph_ops import (
+            _MERGE_RETENTION_FLOOR,
+            _split_data_lines,
+        )
+
+        existing_data = "\n".join(f"E{i}." for i in range(6))
+        new_facts = [f"N{i}." for i in range(4)]
+        # Derive the input count via the same helper production uses so
+        # the boundary math can't drift if the parsing rule changes.
+        input_lines = len(_split_data_lines(existing_data)) + len(new_facts)
+        floor = math.ceil(input_lines * _MERGE_RETENTION_FLOOR)
+
+        # At the floor → accepted.
+        node = store.create_node(
+            name="T", description="d", data=existing_data, parent_id="user",
+        )
+        at_floor = '{"facts": [' + ", ".join(
+            f'"L{i}."' for i in range(floor)) + "]}"
+        mock_llm.return_value = at_floor
+        result = merge_node_data(
+            store=store, node_id=node.id, new_facts=new_facts,
+            cfg=None, chat_model="model",
+        )
+        assert result.success is True
+
+        # One under the floor → rejected.
+        node2 = store.create_node(
+            name="T2", description="d", data=existing_data, parent_id="user",
+        )
+        under_floor = '{"facts": [' + ", ".join(
+            f'"L{i}."' for i in range(floor - 1)) + "]}"
+        mock_llm.return_value = under_floor
+        result = merge_node_data(
+            store=store, node_id=node2.id, new_facts=new_facts,
+            cfg=None, chat_model="model",
+        )
+        assert result.success is False
+        assert store.get_node(node2.id).data == existing_data
+
+    @patch("src.jarvis.memory.graph_ops.call_llm_direct")
+    def test_repeated_collapsing_merges_never_erase_accumulated_facts(
+            self, mock_llm, store):
+        """Bulk ingestion (folder import, diary import) routes many
+        flushes at one cold branch root before it is large enough to
+        split. With a model that collapses on every rewrite, the node
+        must still accumulate rather than be compressed to a handful of
+        lines."""
+        from src.jarvis.memory.graph_ops import _split_data_lines
+
+        node = store.create_node(
+            name="T", description="d", data="Seed fact.", parent_id="user",
+        )
+        mock_llm.return_value = '{"facts": ["Everything, summarised."]}'
+
+        for batch in range(10):
+            facts = [f"Batch {batch} fact {i}." for i in range(5)]
+            merged = merge_node_data(
+                store=store, node_id=node.id, new_facts=facts,
+                cfg=None, chat_model="model",
+            )
+            if not merged.success:
+                for fact in facts:
+                    store.append_to_node(node.id, fact)
+
+        data = store.get_node(node.id).data
+        assert "Batch 0 fact 0." in data
+        assert "Batch 9 fact 4." in data
+        assert len(_split_data_lines(data)) >= 50
+
+    @patch("src.jarvis.memory.graph_ops.call_llm_direct")
     def test_incorporated_indices_tolerant_to_trailing_punctuation(self, mock_llm, store):
         """Picker models routinely drop the trailing full stop when
         rewriting facts ("X." → "X"). A strict normalise_fact match

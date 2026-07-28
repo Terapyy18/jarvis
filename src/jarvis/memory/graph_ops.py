@@ -14,6 +14,7 @@ single intercept point tests patch.
 from __future__ import annotations
 
 import json
+import math
 import re
 from dataclasses import dataclass, field
 from typing import Iterator, NamedTuple, Optional
@@ -494,6 +495,12 @@ def is_populated_node(node: MemoryNode) -> bool:
 # before treating the rewrite as runaway invention.
 _MERGE_GROWTH_SLACK = 2
 
+# Smallest share of the lines handed to a rewrite (existing + new) that
+# it may keep. Below this the rewrite is treated as loss rather than
+# consolidation and is rejected (see the loss guard in
+# ``merge_node_data``).
+_MERGE_RETENTION_FLOOR = 0.5
+
 
 @dataclass
 class MergeResult:
@@ -577,14 +584,15 @@ def merge_node_data(
     equally to the existing data, so the same LLM call serves both
     "incorporate new facts" and "tidy existing facts".
 
-    Hallucination guard: the cleaned rewrite is rejected if it grows
-    beyond ``len(existing_lines) + len(new_facts) + 2`` entries.
-    Consolidation should only ever shrink or hold; runaway growth
-    means the model invented content.
+    Size guards bound the rewrite on both sides. It is rejected if it
+    grows beyond ``len(existing_lines) + len(new_facts) + 2`` entries
+    (runaway growth means the model invented content), and equally if
+    it keeps fewer than ``_MERGE_RETENTION_FLOOR`` of the lines it was
+    handed, existing and new (that is loss, not consolidation).
 
-    Fail-open on any error (LLM failure, parse failure, empty
-    rewrite, oversized rewrite). Caller's append path then writes the
-    fact directly. We never let a flaky LLM erase data — a
+    Fail-open on any error (LLM failure, parse failure, empty rewrite,
+    oversized rewrite, collapsed rewrite). Caller's append path then
+    writes the fact directly. We never let a flaky LLM erase data — a
     contradiction is recoverable, a silent wipe is not.
 
     Pass ``node`` if the caller has already fetched it; saves a
@@ -666,6 +674,31 @@ def merge_node_data(
         debug_log(
             f"merge: rejected rewrite — {len(cleaned)} lines exceeds "
             f"guard cap of {max_kept}",
+            "memory",
+        )
+        return MergeResult(success=False)
+
+    # Loss guard: the mirror image of the hallucination guard, measured
+    # against everything the rewrite was handed (existing + new).
+    # Folding repeated facts into a pattern shrinks a node; discarding
+    # most of what it was given does not. Small picker models answer a
+    # long input with a single summary line, and accepting that
+    # destroys the node's contents — the failure compounds on bulk
+    # ingestion, where a cold branch root is rewritten once per chunk
+    # and can never grow enough for auto-split to structure it.
+    # Basing the floor on the total input (not just the existing lines)
+    # is what catches the collapse while the node is still small: a
+    # one-line node handed five new facts must come back with at least
+    # three. Below the floor we reject and let the caller append — an
+    # untidy node is recoverable (the next merge or a consolidate-all
+    # sweep tidies it, and auto-split structures it once it grows), a
+    # wiped one is not.
+    input_lines = len(existing_lines) + len(sanitised_new)
+    min_kept = math.ceil(input_lines * _MERGE_RETENTION_FLOOR)
+    if len(cleaned) < min_kept:
+        debug_log(
+            f"merge: rejected rewrite — {len(cleaned)} lines falls below "
+            f"retention floor of {min_kept} ({input_lines} input lines)",
             "memory",
         )
         return MergeResult(success=False)
